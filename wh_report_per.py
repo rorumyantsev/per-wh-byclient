@@ -26,8 +26,6 @@ for client in CLIENT_LIST:
     CLIENT_MAP.append({client: i})
     i=i+1
 
-st.write(CLIENT_MAP)
-
 
 def get_claims(secret, date_from, date_to, cursor=0):
     url = API_URL
@@ -106,9 +104,6 @@ def get_report(client, option="Today", start_=None, end_=None) -> pandas.DataFra
 
     today = today.strftime("%Y-%m-%d")
     report = []
-    st.write(client)
-    st.write(CLIENT_MAP["Oechsle"])
-    
     client_num = CLIENT_MAP[client]
     secret = CLAIM_SECRETS[client_num]
     claims, cursor = get_claims(secret, date_from, date_to)
@@ -217,7 +212,7 @@ option = st.sidebar.selectbox(
 )
 
 client = st.sidebar.selectbox("Select client", CLIENT_LIST)
-st.write(client)
+
 
 @st.cache_data(ttl=1800.0)
 def get_cached_report(client, option):
@@ -225,7 +220,7 @@ def get_cached_report(client, option):
     return report
 
 
-df = get_cached_report(option, client)        
+df = get_cached_report(client, option)        
 delivered_today = len(df[df['status'].isin(['delivered', 'delivered_finish'])])
 
 statuses = st.sidebar.multiselect(
