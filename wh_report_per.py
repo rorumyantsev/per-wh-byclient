@@ -214,6 +214,7 @@ option = st.sidebar.selectbox(
 )
 
 client = st.sidebar.selectbox("Select client", CLIENT_LIST)
+st.write(client)
 
 @st.cache_data(ttl=1800.0)
 def get_cached_report(client, option):
