@@ -59,7 +59,7 @@ def get_claims(secret, date_from, date_to, cursor=0):
         return [], None
 
 
-def get_report(option="Today", client, start_=None, end_=None) -> pandas.DataFrame:
+def get_report(client, option="Today", start_=None, end_=None) -> pandas.DataFrame:
     
     offset_back = 0
     if option == "Yesterday":
@@ -216,8 +216,8 @@ option = st.sidebar.selectbox(
 client = st.sidebar.selectbox("Select client", CLIENT_LIST)
 
 @st.cache_data(ttl=1800.0)
-def get_cached_report(option, client):
-    report = get_report(option, client)
+def get_cached_report(client, option):
+    report = get_report(client, option)
     return report
 
 
