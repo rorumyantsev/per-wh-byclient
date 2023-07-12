@@ -20,7 +20,7 @@ CLIENT_LIST = st.secrets["CLIENTS"]
 API_URL = st.secrets["API_URL"]
 FILE_BUFFER = io.BytesIO()
 
-CLIENT_MAP = []
+CLIENT_MAP = {}
 i=0
 for client in CLIENT_LIST:
     CLIENT_MAP.append({client: i})
