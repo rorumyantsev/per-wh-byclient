@@ -22,6 +22,7 @@ FILE_BUFFER = io.BytesIO()
 
 
 i=0
+CLIENT_MAP = dict()
 for client in CLIENT_LIST:
     CLIENT_MAP[client] = i
     i=i+1
