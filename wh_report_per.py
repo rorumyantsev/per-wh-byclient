@@ -105,8 +105,8 @@ def get_report(client, option="Today", start_=None, end_=None) -> pandas.DataFra
 
     today = today.strftime("%Y-%m-%d")
     report = []
-    st.write(client)
-    st.write(CLIENT_MAP["Oechsle "])
+    #st.write(client)
+    #st.write(CLIENT_MAP["Oechsle "])
     
     
     client_num = CLIENT_MAP[client]
