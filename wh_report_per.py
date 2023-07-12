@@ -20,6 +20,14 @@ CLIENT_LIST = st.secrets["CLIENTS"]
 API_URL = st.secrets["API_URL"]
 FILE_BUFFER = io.BytesIO()
 
+CLIENT_MAP = []
+i=0
+for client in CLIENT_LIST:
+    CLIENT_MAP.append({client: i})
+    i=i+1
+
+s.write(CLIENT_MAP)
+
 
 def get_claims(secret, date_from, date_to, cursor=0):
     url = API_URL
@@ -51,7 +59,7 @@ def get_claims(secret, date_from, date_to, cursor=0):
         return [], None
 
 
-def get_report(option="Today", start_=None, end_=None) -> pandas.DataFrame:
+def get_report(option="Today", client, start_=None, end_=None) -> pandas.DataFrame:
     
     offset_back = 0
     if option == "Yesterday":
@@ -98,84 +106,84 @@ def get_report(option="Today", start_=None, end_=None) -> pandas.DataFrame:
 
     today = today.strftime("%Y-%m-%d")
     report = []
-    i = 0
-    for secret in CLAIM_SECRETS:
-        claims, cursor = get_claims(secret, date_from, date_to)
-        while cursor:
-            new_page_claims, cursor = get_claims(secret, date_from, date_to, cursor)
-            claims = claims + new_page_claims
-        print(f"{datetime.datetime.now()}: Processing {len(claims)} claims")
-        for claim in claims:
-            try:
-                claim_from_time = claim['same_day_data']['delivery_interval']['from']
-            except:
+    client_num = CLIENT_MAP[client]
+    secret = CLAIM_SECRETS[client_num]
+    claims, cursor = get_claims(secret, date_from, date_to)
+    while cursor:
+        new_page_claims, cursor = get_claims(secret, date_from, date_to, cursor)
+        claims = claims + new_page_claims
+    print(f"{datetime.datetime.now()}: Processing {len(claims)} claims")
+    for claim in claims:
+        try:
+            claim_from_time = claim['same_day_data']['delivery_interval']['from']
+        except:
+            continue
+        cutoff_time = datetime.datetime.fromisoformat(claim_from_time).astimezone(timezone(client_timezone))
+        cutoff_date = cutoff_time.strftime("%Y-%m-%d")
+        if not start_ and option != "Received":
+            if cutoff_date != today:
                 continue
-            cutoff_time = datetime.datetime.fromisoformat(claim_from_time).astimezone(timezone(client_timezone))
-            cutoff_date = cutoff_time.strftime("%Y-%m-%d")
-            if not start_ and option != "Received":
-                if cutoff_date != today:
-                    continue
-            report_cutoff = cutoff_time.strftime("%Y-%m-%d %H:%M")
-            try:
-                report_client_id = claim['route_points'][0]['external_order_id']
-            except:
-                report_client_id = "External ID not set"
-            try:
-                report_barcode = claim['route_points'][1]['external_order_id']
-            except:
-                report_barcode = "Barcode not set"
-            report_claim_id = claim['id']
-            try:
-                report_lo_code = claim['items'][0]['extra_id']
-            except:
-                report_lo_code = "No LO code"
-            report_client = CLIENT_LIST[i]
-            report_pickup_address = claim['route_points'][0]['address']['fullname']
-            report_pod_point_id = str(claim['route_points'][1]['id'])
-            report_receiver_address = claim['route_points'][1]['address']['fullname']
-            report_receiver_phone = claim['route_points'][1]['contact']['phone']
-            report_receiver_name = claim['route_points'][1]['contact']['name']
-            try:
-                report_comment = claim['comment']
-            except:
-                report_comment = "Missing comment in claim"
-            report_status = claim['status']
-            report_created_time = dateutil.parser.isoparse(claim['created_ts']).astimezone(timezone(client_timezone))
-            report_status_time = dateutil.parser.isoparse(claim['updated_ts']).astimezone(timezone(client_timezone))
-            report_longitude = claim['route_points'][1]['address']['coordinates'][0]
-            report_latitude = claim['route_points'][1]['address']['coordinates'][1]
-            report_store_longitude = claim['route_points'][0]['address']['coordinates'][0]
-            report_store_latitude = claim['route_points'][0]['address']['coordinates'][1]
-            report_corp_id = claim['corp_client_id']
-            try:
-                report_courier_name = claim['performer_info']['courier_name']
-                report_courier_park = claim['performer_info']['legal_name']
-            except:
-                report_courier_name = "No courier yet"
-                report_courier_park = "No courier yet"
-            try:
-                report_return_reason = str(claim['route_points'][1]['return_reasons'])
+        report_cutoff = cutoff_time.strftime("%Y-%m-%d %H:%M")
+        try:
+            report_client_id = claim['route_points'][0]['external_order_id']
+        except:
+            report_client_id = "External ID not set"
+        try:
+            report_barcode = claim['route_points'][1]['external_order_id']
+        except:
+            report_barcode = "Barcode not set"
+        report_claim_id = claim['id']
+        try:
+            report_lo_code = claim['items'][0]['extra_id']
+        except:
+            report_lo_code = "No LO code"
+        #report_client = CLIENT_LIST[i]
+        report_pickup_address = claim['route_points'][0]['address']['fullname']
+        report_pod_point_id = str(claim['route_points'][1]['id'])
+        report_receiver_address = claim['route_points'][1]['address']['fullname']
+        report_receiver_phone = claim['route_points'][1]['contact']['phone']
+        report_receiver_name = claim['route_points'][1]['contact']['name']
+        try:
+            report_comment = claim['comment']
+        except:
+            report_comment = "Missing comment in claim"
+        report_status = claim['status']
+        report_created_time = dateutil.parser.isoparse(claim['created_ts']).astimezone(timezone(client_timezone))
+        report_status_time = dateutil.parser.isoparse(claim['updated_ts']).astimezone(timezone(client_timezone))
+        report_longitude = claim['route_points'][1]['address']['coordinates'][0]
+        report_latitude = claim['route_points'][1]['address']['coordinates'][1]
+        report_store_longitude = claim['route_points'][0]['address']['coordinates'][0]
+        report_store_latitude = claim['route_points'][0]['address']['coordinates'][1]
+        report_corp_id = claim['corp_client_id']
+        try:
+            report_courier_name = claim['performer_info']['courier_name']
+            report_courier_park = claim['performer_info']['legal_name']
+        except:
+            report_courier_name = "No courier yet"
+            report_courier_park = "No courier yet"
+        try:
+            report_return_reason = str(claim['route_points'][1]['return_reasons'])
 #                report_return_comment = claim['route_points'][1]['return_comment']
-            except:
-                report_return_reason = "No return reasons"
+        except:
+            report_return_reason = "No return reasons"
 #               report_return_comment = "No return comments"
-            try:
-                report_route_id = claim['route_id']
-            except:
-                report_route_id = "No route"
-            try:
-                report_point_B_time = datetime.datetime.strptime(claim['route_points'][1]['visited_at']['actual'],"%Y-%m-%dT%H:%M:%S.%f%z").astimezone(
-        timezone(client_timezone))
-                report_point_B_time = report_point_B_time.strftime("%Y-%m-%dT%H:%M:%S.%f%z")
-            except:
-                report_point_B_time = "Point B was never visited"
-            row = [report_cutoff, report_created_time, report_client, report_client_id, report_barcode, report_claim_id, report_lo_code, report_status, report_status_time, 
-                   report_pod_point_id, report_pickup_address, report_receiver_address, report_receiver_phone, report_receiver_name, report_comment,
-                   report_courier_name, report_courier_park,
-                   report_return_reason, report_route_id,
-                   report_longitude, report_latitude, report_store_longitude, report_store_latitude, report_corp_id, report_point_B_time]
-            report.append(row)
-        i = i + 1
+        try:
+            report_route_id = claim['route_id']
+        except:
+            report_route_id = "No route"
+        try:
+            report_point_B_time = datetime.datetime.strptime(claim['route_points'][1]['visited_at']['actual'],"%Y-%m-%dT%H:%M:%S.%f%z").astimezone(
+    timezone(client_timezone))
+            report_point_B_time = report_point_B_time.strftime("%Y-%m-%dT%H:%M:%S.%f%z")
+        except:
+            report_point_B_time = "Point B was never visited"
+        row = [report_cutoff, report_created_time, report_client, report_client_id, report_barcode, report_claim_id, report_lo_code, report_status, report_status_time, 
+               report_pod_point_id, report_pickup_address, report_receiver_address, report_receiver_phone, report_receiver_name, report_comment,
+               report_courier_name, report_courier_park,
+               report_return_reason, report_route_id,
+               report_longitude, report_latitude, report_store_longitude, report_store_latitude, report_corp_id, report_point_B_time]
+        report.append(row)
+        #i = i + 1
     
     print(f"{datetime.datetime.now()}: Building dataframe")
     result_frame = pandas.DataFrame(report,
@@ -205,14 +213,15 @@ option = st.sidebar.selectbox(
     ["Weekly", "Monthly", "Received", "Today", "Yesterday", "Tomorrow"]  # Disabled Monthly for now
 )
 
+client = st.sidebar.selectbox("Select client", CLIENT_LIST)
 
 @st.cache_data(ttl=1800.0)
-def get_cached_report(option):
-    report = get_report(option)
+def get_cached_report(option, client):
+    report = get_report(option, client)
     return report
 
 
-df = get_cached_report(option)        
+df = get_cached_report(option, client)        
 delivered_today = len(df[df['status'].isin(['delivered', 'delivered_finish'])])
 
 statuses = st.sidebar.multiselect(
