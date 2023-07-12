@@ -26,7 +26,7 @@ for client in CLIENT_LIST:
     CLIENT_MAP.append({client: i})
     i=i+1
 
-s.write(CLIENT_MAP)
+st.write(CLIENT_MAP)
 
 
 def get_claims(secret, date_from, date_to, cursor=0):
