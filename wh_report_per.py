@@ -71,8 +71,8 @@ def get_report(client, option="Today", start_=None, end_=None) -> pandas.DataFra
     client_timezone = "America/Lima"
 
     if option == "Monthly":
-        start_ = "2023-08-30"
-        end_ = "2023-10-31"
+        start_ = "2023-10-01"
+        end_ = "2023-11-30"
         today = datetime.datetime.now(timezone(client_timezone))
         date_from_offset = datetime.datetime.fromisoformat(start_).astimezone(
             timezone(client_timezone)) - datetime.timedelta(days=1)
